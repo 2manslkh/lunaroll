@@ -3,5 +3,5 @@ services:
     name: sveltekit
     env: node
     buildCommand: pnpm install && pnpm build
-    startCommand: node build/index.js
-    autoDeploy: false
+    startCommand: node ./svelte-kit/build/index.js
+    autoDeploy: true
