@@ -1,0 +1,11 @@
+{
+  // https://www.typescriptlang.org/tsconfig#compilerOptions
+  "compilerOptions": {
+    "strict": true,
+    "module": "NodeNext",
+    "target": "es2021",
+    "outDir": "dist"
+  },
+  "include": ["telegram/**/*"],
+  "exclude": ["node_modules"]
+}
