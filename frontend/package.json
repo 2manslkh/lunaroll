@@ -36,5 +36,8 @@
 	"type": "module",
 	"engines": {
 		"node": ">=16.14"
+	},
+	"dependencies": {
+		"@sveltejs/adapter-node": "^1.0.0"
 	}
 }
