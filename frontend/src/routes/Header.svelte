@@ -18,8 +18,12 @@
 	}
 
 	.header-logo {
-   		padding: 10px;
-		width: 50%;
+   		padding: 32px;
+		width: 100%;
+	}
+	.header-logo img {
+   		/* padding: 10px; */
+		width: 100%;
 	}
 
 </style>

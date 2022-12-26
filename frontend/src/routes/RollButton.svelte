@@ -10,20 +10,34 @@
 
 <style>
     button {
-      font-size: 18px;
+      width: 100%;
       padding: 10px 20px;
       border-radius: 5px;
       background-color: #69E444;
       border: none;
-    }
-    p {
       font-size: 24px;
       font-weight: bold;
+      font-family: 'Raleway';
+      font-style: normal;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 16px;
+    }
+    p {
+        font-size: 24px;
+        font-weight: bold;
+        font-family: Raleway;
+        font-style: normal;
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 16px;
     }
 </style>
   
-<Dice value={roll}/>
+<div>
+    <Dice value={roll}/>
+    <button on:click={rollDice}>Roll Dice</button>
+</div>
 
-<button on:click={rollDice}>Roll Dice</button>
 
   
