@@ -9,7 +9,6 @@
 	<main>
 		<slot />
 	</main>
-
 </div>
 
 <style>
@@ -29,5 +28,4 @@
 		margin: 0 auto;
 		box-sizing: border-box;
 	}
-
 </style>

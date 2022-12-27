@@ -6,7 +6,7 @@
 
 <header>
 	<div class="header-logo">
-		<img src={logo} alt="LunarRoll"/>
+		<img src={logo} alt="LunarRoll" />
 	</div>
 </header>
 
@@ -18,12 +18,11 @@
 	}
 
 	.header-logo {
-   		padding: 32px;
+		padding: 32px;
 		width: 100%;
 	}
 	.header-logo img {
-   		/* padding: 10px; */
+		/* padding: 10px; */
 		width: 100%;
 	}
-
 </style>

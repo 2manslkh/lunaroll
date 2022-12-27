@@ -1,5 +1,6 @@
 import "dotenv/config";
 
+import { InlineQueryResult, InlineQueryResultGame } from "telegraf/types";
 import { Markup, Telegraf } from "telegraf";
 
 import { addDiceGame } from "./games/dice";
@@ -22,6 +23,24 @@ bot.help((ctx) => ctx.reply("Send me a sticker"));
 bot.hears("hi", (ctx) => ctx.reply("Hey there"));
 
 addDiceGame(bot);
+
+let games: { game_short_name: string }[] = [{ game_short_name: "dice" }];
+
+bot.on("inline_query", async (ctx) => {
+  const markup = Markup.inlineKeyboard([Markup.button.game("🎮 Play now!")]);
+
+  const gamess = (games as { game_short_name: string }[])
+    .filter(({ game_short_name }) => game_short_name)
+    .map(
+      ({ game_short_name }): InlineQueryResultGame => ({
+        type: "game",
+        id: game_short_name,
+        game_short_name: "dice",
+        ...Markup.inlineKeyboard([Markup.button.game("🎮 Play now!")]),
+      })
+    );
+  return await ctx.answerInlineQuery(gamess);
+});
 
 bot.launch();
 
