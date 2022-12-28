@@ -2,10 +2,11 @@
   "name": "lunaroll",
   "version": "1.0.0",
   "description": "",
-  "main": "./telegram/server.ts",
+  "main": "./server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon ./telegram/server.ts"
+    "start": "node ./server.ts",
+    "dev": "nodemon ./server.ts"
   },
   "keywords": [],
   "author": "",
