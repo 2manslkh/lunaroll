@@ -15,7 +15,8 @@ bot.
 """
 
 import logging
-
+import re
+import os
 from telegram import __version__ as TG_VER
 
 try:
@@ -29,7 +30,14 @@ if __version_info__ < (20, 0, 0, "alpha", 5):
         f"{TG_VER} version of this example, "
         f"visit https://docs.python-telegram-bot.org/en/v{TG_VER}/examples.html"
     )
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+from telegram import (
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    Update,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
+
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -45,92 +53,128 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-GENDER, PHOTO, LOCATION, BIO = range(4)
+# Withdraw States
+(
+    WITHDRAW__SELECT_CURRENCY,
+    WITHDRAW__INPUT_AMOUNT,
+    WITHDRAW__INPUT_WITHDRAW_ADDRESS,
+    WITHDRAW__CONFIRMATION,
+) = range(4)
+
+from dotenv import load_dotenv
+
+from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK
+
+load_dotenv()  # take environment variables from .env.
+
+TOKEN = os.getenv("TELEGRAM_API_KEY")
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Starts the conversation and asks the user about their gender."""
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Display Start Reply Keyboard."""
     reply_keyboard = [["Boy", "Girl", "Other"]]
 
     await update.message.reply_text(
-        "Hi! My name is Professor Bot. I will hold a conversation with you. "
-        "Send /cancel to stop talking to me.\n\n"
-        "Are you a boy or a girl?",
+        "Welcome Back to Lunaroll! 🎲",
         reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, input_field_placeholder="Boy or Girl?"
+            MAIN_MENU_RK(),
+            resize_keyboard=True,
+            input_field_placeholder="Main Menu",
         ),
     )
 
-    return GENDER
+    return
 
 
-async def gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the selected gender and asks for a photo."""
-    user = update.message.from_user
-    logger.info("Gender of %s: %s", user.first_name, update.message.text)
+async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show user's balances and input keyboard."""
+    # user = update.message.from_user
+    # logger.info("Gender of %s: %s", user.first_name, update.message.text)
     await update.message.reply_text(
-        "I see! Please send me a photo of yourself, "
-        "so I know what you look like, or send /skip if you don't want to.",
+        "Balances:\n\nUSDT: 1000.00",
         reply_markup=ReplyKeyboardRemove(),
     )
 
-    return PHOTO
+    return WITHDRAW__SELECT_CURRENCY
 
 
-async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the photo and asks for a location."""
-    user = update.message.from_user
-    photo_file = await update.message.photo[-1].get_file()
-    await photo_file.download_to_drive("user_photo.jpg")
-    logger.info("Photo of %s: %s", user.first_name, "user_photo.jpg")
+async def withdraw_select_currency(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+
+    # Perform regex
+    if not re.match(r"^[a-zA-Z0-9]+$", update.message.text):
+        # Send error message to user
+        await update.message.reply_text(
+            "Invalid Currency. Please try again.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        return WITHDRAW__SELECT_CURRENCY
+
+    # Store input in context
+    context.user_data["currency"] = update.message.text
+    logger.info("Currency: %s", update.message.text)
+
     await update.message.reply_text(
-        "Gorgeous! Now, send me your location please, or send /skip if you don't want to."
+        "Input amount to withdraw:",
+        reply_markup=ReplyKeyboardRemove(),
     )
+    return WITHDRAW__INPUT_AMOUNT
 
-    return LOCATION
 
+async def withdraw_input_amount(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    # Perform regex
+    if not re.match(r"^\d+(\.\d{1,5})?$", update.message.text):
+        # Send error message to user
+        await update.message.reply_text(
+            "Invalid Amount. Please try again.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        return WITHDRAW__INPUT_AMOUNT
 
-async def skip_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Skips the photo and asks for a location."""
-    user = update.message.from_user
-    logger.info("User %s did not send a photo.", user.first_name)
+    # Store input in context
+    context.user_data["amount"] = update.message.text
+    logger.info("Amount: %s", update.message.text)
+
     await update.message.reply_text(
-        "I bet you look great! Now, send me your location please, or send /skip."
+        "Input address to withdraw:",
+        reply_markup=ReplyKeyboardRemove(),
     )
+    return WITHDRAW__INPUT_WITHDRAW_ADDRESS
 
-    return LOCATION
+
+async def withdraw_input_withdraw_address(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+
+    regex = r"^0x[a-fA-F0-9]{40}$"
+    if not re.match(regex, update.message.text):
+        await update.message.reply_text(
+            "Invalid Ethereum address. Please enter a valid address."
+        )
+        return WITHDRAW__INPUT_WITHDRAW_ADDRESS
+
+    address = update.message.text
+    context.user_data["withdraw_address"] = address
+    logger.info("Withdraw Address: %s", update.message.text)
+    await update.message.reply_text(
+        f"""Confirm Withdrawal?\n\n{"{:.5f}".format(float(context.user_data['amount']))} {context.user_data['currency']} to {address}""",
+        reply_markup=CONFIRMATION_IK(),
+    )
+    return WITHDRAW__CONFIRMATION
 
 
-async def location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the location and asks for some info about the user."""
+async def withdraw_confirmation(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    # Print inputs from previous sections
     user = update.message.from_user
-    user_location = update.message.location
     logger.info(
-        "Location of %s: %f / %f", user.first_name, user_location.latitude, user_location.longitude
+        "Withdrawal confirmation of %s: %s", user.first_name, update.message.text
     )
-    await update.message.reply_text(
-        "Maybe I can visit you sometime! At last, tell me something about yourself."
-    )
-
-    return BIO
-
-
-async def skip_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Skips the location and asks for info about the user."""
-    user = update.message.from_user
-    logger.info("User %s did not send a location.", user.first_name)
-    await update.message.reply_text(
-        "You seem a bit paranoid! At last, tell me something about yourself."
-    )
-
-    return BIO
-
-
-async def bio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the info about the user and ends the conversation."""
-    user = update.message.from_user
-    logger.info("Bio of %s: %s", user.first_name, update.message.text)
-    await update.message.reply_text("Thank you! I hope we can talk again some day.")
+    logger.info("Inputs: %s", context.user_data)
 
     return ConversationHandler.END
 
@@ -149,24 +193,53 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 def main() -> None:
     """Run the bot."""
     # Create the Application and pass it your bot's token.
-    application = Application.builder().token("5932718937:AAEjq4x_IX-nV1vyedPgMdiBjqznuuZWfsA").build()
+    application = Application.builder().token(TOKEN).build()
+
+    # Handle start
+
+    # return [["📝 Register", "💰 Deposit", "💸 Withdraw"]]
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+    start_handler = CommandHandler("start", start)
+    withdraw_handler = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex("^Withdraw$"), withdraw)],
         states={
-            GENDER: [MessageHandler(filters.Regex("^(Boy|Girl|Other)$"), gender)],
-            PHOTO: [MessageHandler(filters.PHOTO, photo), CommandHandler("skip", skip_photo)],
-            LOCATION: [
-                MessageHandler(filters.LOCATION, location),
-                CommandHandler("skip", skip_location),
+            WITHDRAW__SELECT_CURRENCY: [
+                MessageHandler(filters.TEXT, withdraw_select_currency)
             ],
-            BIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, bio)],
+            WITHDRAW__INPUT_AMOUNT: [
+                MessageHandler(filters.TEXT, withdraw_input_amount),
+            ],
+            WITHDRAW__INPUT_WITHDRAW_ADDRESS: [
+                MessageHandler(
+                    filters.TEXT,
+                    withdraw_input_withdraw_address,
+                ),
+            ],
+            WITHDRAW__CONFIRMATION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, withdraw_confirmation)
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    deposit_handler = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex("^Deposit$"), deposit)],
+        states={
+            DEPOSIT__SELECT_CURRENCY: [
+                MessageHandler(filters.TEXT, deposit_select_currency)
+            ],
+            DEPOSIT__INPUT_AMOUNT: [
+                MessageHandler(filters.TEXT, deposit_input_amount),
+            ],
+            DEPOSIT__CONFIRMATION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, deposit_confirmation)
+            ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
 
-    application.add_handler(conv_handler)
+    application.add_handler(start_handler)
+    application.add_handler(withdraw_handler)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
