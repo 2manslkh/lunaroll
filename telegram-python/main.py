@@ -17,6 +17,16 @@ bot.
 import logging
 import re
 import os
+import pyqrcode
+import base64
+
+
+def generate_qr_code(address):
+    qr_code = pyqrcode.create(address)
+    qr_code_data = qr_code.png_as_base64_str(scale=5)
+    return qr_code_data
+
+
 from telegram import __version__ as TG_VER
 
 try:
@@ -179,6 +189,27 @@ async def withdraw_confirmation(
     return ConversationHandler.END
 
 
+# Deposit States
+
+
+async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+    address = "0xCa5cF03D081197BE24eF707081FbD7F3F11EB02D"
+    await update.message.reply_text(
+        f"Your Deposit Address: {address}",
+    )
+
+    # Generate QR Code
+    qr_code_data = generate_qr_code(address)
+    print(qr_code_data)
+
+    # Send photo
+    await update.message.reply_photo(
+        photo=base64.b64decode(qr_code_data),
+        caption="Scan to deposit",
+    )
+
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
     user = update.message.from_user
@@ -202,7 +233,7 @@ def main() -> None:
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     start_handler = CommandHandler("start", start)
     withdraw_handler = ConversationHandler(
-        entry_points=[MessageHandler(filters.Regex("^Withdraw$"), withdraw)],
+        entry_points=[MessageHandler(filters.Regex("^💸 Withdraw$"), withdraw)],
         states={
             WITHDRAW__SELECT_CURRENCY: [
                 MessageHandler(filters.TEXT, withdraw_select_currency)
@@ -222,24 +253,11 @@ def main() -> None:
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
-    deposit_handler = ConversationHandler(
-        entry_points=[MessageHandler(filters.Regex("^Deposit$"), deposit)],
-        states={
-            DEPOSIT__SELECT_CURRENCY: [
-                MessageHandler(filters.TEXT, deposit_select_currency)
-            ],
-            DEPOSIT__INPUT_AMOUNT: [
-                MessageHandler(filters.TEXT, deposit_input_amount),
-            ],
-            DEPOSIT__CONFIRMATION: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, deposit_confirmation)
-            ],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
+    deposit_handler = MessageHandler(filters.Regex("^💰 Deposit$"), deposit)
 
     application.add_handler(start_handler)
     application.add_handler(withdraw_handler)
+    application.add_handler(deposit_handler)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
