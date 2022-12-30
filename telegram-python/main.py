@@ -44,6 +44,7 @@ from telegram import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
+    InlineQueryResultGame,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
@@ -53,6 +54,7 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     ConversationHandler,
+    InlineQueryHandler,
     MessageHandler,
     filters,
 )
@@ -210,6 +212,18 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.inline_query.query
+    results = [InlineQueryResultGame(id="dice", game_short_name="dice")]
+
+    # create the inline game
+
+    # create the InputGameMessageContent
+
+    # create the inline query response
+    await update.inline_query.answer(results)
+
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
     user = update.message.from_user
@@ -254,10 +268,15 @@ def main() -> None:
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     deposit_handler = MessageHandler(filters.Regex("^💰 Deposit$"), deposit)
+    # create the InlineQueryHandler
+    inline_query_handler = InlineQueryHandler(inline_query)
+
+    # add the handler to the Dispatcher
 
     application.add_handler(start_handler)
     application.add_handler(withdraw_handler)
     application.add_handler(deposit_handler)
+    application.add_handler(inline_query_handler)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
