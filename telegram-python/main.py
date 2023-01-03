@@ -74,9 +74,10 @@ logger = logging.getLogger(__name__)
     WITHDRAW__CONFIRMATION,
 ) = range(4)
 
+from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK, WITHDRAW_RK, GAMES_RK
+
 from dotenv import load_dotenv
 
-from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK, WITHDRAW_RK, GAMES_RK
 
 load_dotenv()  # take environment variables from .env.
 
@@ -90,16 +91,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Welcome Back to Lunaroll! 🎲",
         reply_markup=ReplyKeyboardMarkup(
-            # [
-            #     [
-            #         KeyboardButton(
-            #             "test",
-            #             web_app=WebAppInfo(
-            #                 url="https://python-telegram-bot.org/static/webappbot"
-            #             ),
-            #         )
-            #     ]
-            # ],
             MAIN_MENU_RK(),
             resize_keyboard=True,
             input_field_placeholder="Main Menu",
@@ -197,35 +188,30 @@ async def withdraw_input_withdraw_address(
 async def withdraw_confirmation(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> int:
-    # Print inputs from previous sections
 
     query = update.callback_query
-    await query.answer()
-    # Get the data from the callback_data.
-    # If you're using a type checker like MyPy, you'll have to use typing.cast
-    # to make the checker get the expected type of the callback_data
-    logger.info("Query Data: %s", query.data)
-    # await query.edit_message_text(
-    #     text=f"So far you've selected {number_list}. Choose the next item:",
-    #     reply_markup=build_keyboard(number_list),
-    # )
 
-    # we can delete the data stored for the query, because we've replaced the buttons
+    logger.info("Query Data: %s", query.data)
 
     if query.data == "withdraw_yes":
-        # await update.effective_message.edit_reply_markup(
-        #     reply_markup=InlineKeyboardRemove()
-        # )
-
-        await update.effective_message.edit_reply_markup()
         await update.effective_message.reply_text(
             text="Withdrawal Confirmed",
-            reply_markup=ReplyKeyboardRemove(),
+            reply_markup=ReplyKeyboardMarkup(
+                MAIN_MENU_RK(),
+                resize_keyboard=True,
+                input_field_placeholder="Main Menu",
+            ),
         )
+        await update.effective_message.edit_reply_markup()
+
     elif query.data == "withdraw_no":
         await update.effective_message.reply_text(
             text="Withdrawal Cancelled",
-            reply_markup=ReplyKeyboardRemove(),
+            reply_markup=ReplyKeyboardMarkup(
+                MAIN_MENU_RK(),
+                resize_keyboard=True,
+                input_field_placeholder="Main Menu",
+            ),
         )
         await update.effective_message.edit_reply_markup()
 
@@ -238,8 +224,8 @@ async def withdraw_confirmation(
 async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     address = "0xCa5cF03D081197BE24eF707081FbD7F3F11EB02D"
-    await update.message.reply_text(
-        f"Your Deposit Address: {address}",
+    await update.message.reply_markdown_v2(
+        f"Your Deposit Address: `{address}`",
     )
 
     # Generate QR Code
@@ -265,7 +251,6 @@ async def games(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         reply_markup=ReplyKeyboardMarkup(
             GAMES_RK(),
             resize_keyboard=True,
-            one_time_keyboard=True,
             input_field_placeholder="Select Game...",
         ),
     )
@@ -275,19 +260,6 @@ async def game_dice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.info("Game Dice")
     await update.message.reply_game(
         game_short_name="dice",
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        "Play DICEEEEE",
-                        callback_game=CallbackGame(),
-                        web_app=WebAppInfo(
-                            url="https://python-telegram-bot.org/static/webappbot"
-                        ),
-                    )
-                ]
-            ]
-        ),
     )
 
 
@@ -327,6 +299,7 @@ def main() -> None:
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     start_handler = CommandHandler("start", start)
+    back_handler = MessageHandler(filters.Regex("^Back to Main Menu$"), start)
     register_handler = MessageHandler(filters.Regex("^📝 Register$"), register)
     games_handler = MessageHandler(filters.Regex("^🎲 Games$"), games)
     withdraw_handler = ConversationHandler(
@@ -361,6 +334,7 @@ def main() -> None:
 
     # Basic Command Handlers
     application.add_handler(start_handler)
+    application.add_handler(back_handler)
     application.add_handler(games_handler)
     application.add_handler(register_handler)
     application.add_handler(withdraw_handler)

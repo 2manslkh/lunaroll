@@ -10,7 +10,11 @@ def WITHDRAW_RK():
 
 
 def GAMES_RK():
-    return [["▶️ Dice"]]
+    return [
+        ["▶️ Dice", "▶️ 1 to 100", "▶️ Blackjack", "▶️ Roulette"],
+        ["▶️ Poker", "▶️ Baccarat", "▶️ Slots", "▶️ Crash"],
+        ["Back to Main Menu"],
+    ]
 
 
 def WITHDRAW_IK():
@@ -20,7 +24,9 @@ def WITHDRAW_IK():
 def CONFIRMATION_IK():
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("Yes", callback_data="withdraw_yes")],
-            [InlineKeyboardButton("No", callback_data="withdraw_no")],
+            [
+                InlineKeyboardButton("Yes", callback_data="withdraw_yes"),
+                InlineKeyboardButton("No", callback_data="withdraw_no"),
+            ]
         ]
     )
