@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def MAIN_MENU_RK():
-    return [["📝 Register", "💰 Deposit", "💸 Withdraw"]]
+    return [["📝 Register", "💰 Deposit", "💸 Withdraw"], ["🎲 Games"]]
 
 
 def WITHDRAW_RK():
