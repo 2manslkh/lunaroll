@@ -9,6 +9,10 @@ def WITHDRAW_RK():
     return [["USDT", "USDC", "WBTC", "WETH"]]
 
 
+def GAMES_RK():
+    return [["▶️ Dice"]]
+
+
 def WITHDRAW_IK():
     return [[InlineKeyboardButton("USDT", callback_data="withdraw_usdt")]]
 
