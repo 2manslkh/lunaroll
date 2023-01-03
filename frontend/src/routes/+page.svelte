@@ -1,7 +1,6 @@
 <script>
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcome_fallback from '$lib/images/svelte-welcome.png';
-	import RollButton from './RollButton.svelte';
 </script>
 
 <svelte:head>
@@ -10,7 +9,9 @@
 </svelte:head>
 
 <section>
-	<RollButton />
+	<p>Main Page</p>
+	<a href="/dice">Dice</a>
+	<a href="/1to100">1 to 100</a>
 </section>
 
 <style>

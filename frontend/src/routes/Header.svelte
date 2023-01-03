@@ -19,7 +19,7 @@
 
 	.header-logo {
 		padding: 32px;
-		width: 100%;
+		width: 50%;
 	}
 	.header-logo img {
 		/* padding: 10px; */
