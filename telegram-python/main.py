@@ -55,6 +55,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     InlineQueryHandler,
+    CallbackQueryHandler,
     MessageHandler,
     filters,
 )
@@ -75,7 +76,7 @@ logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 
-from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK
+from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK, WITHDRAW_RK
 
 load_dotenv()  # take environment variables from .env.
 
@@ -84,7 +85,6 @@ TOKEN = os.getenv("TELEGRAM_API_KEY")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Display Start Reply Keyboard."""
-    reply_keyboard = [["Boy", "Girl", "Other"]]
 
     await update.message.reply_text(
         "Welcome Back to Lunaroll! 🎲",
@@ -104,8 +104,13 @@ async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # logger.info("Gender of %s: %s", user.first_name, update.message.text)
     await update.message.reply_text(
         "Balances:\n\nUSDT: 1000.00",
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=ReplyKeyboardMarkup(
+            WITHDRAW_RK(),
+            resize_keyboard=True,
+            input_field_placeholder="Select Currency...",
+        ),
     )
+    await update.message.reply_text("Select currency to withdraw:")
 
     return WITHDRAW__SELECT_CURRENCY
 
@@ -182,11 +187,36 @@ async def withdraw_confirmation(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> int:
     # Print inputs from previous sections
-    user = update.message.from_user
-    logger.info(
-        "Withdrawal confirmation of %s: %s", user.first_name, update.message.text
-    )
-    logger.info("Inputs: %s", context.user_data)
+
+    query = update.callback_query
+    await query.answer()
+    # Get the data from the callback_data.
+    # If you're using a type checker like MyPy, you'll have to use typing.cast
+    # to make the checker get the expected type of the callback_data
+    logger.info("Query Data: %s", query.data)
+    # await query.edit_message_text(
+    #     text=f"So far you've selected {number_list}. Choose the next item:",
+    #     reply_markup=build_keyboard(number_list),
+    # )
+
+    # we can delete the data stored for the query, because we've replaced the buttons
+
+    if query.data == "withdraw_yes":
+        # await update.effective_message.edit_reply_markup(
+        #     reply_markup=InlineKeyboardRemove()
+        # )
+
+        await update.effective_message.edit_reply_markup()
+        await update.effective_message.reply_text(
+            text="Withdrawal Confirmed",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+    elif query.data == "withdraw_no":
+        await update.effective_message.reply_text(
+            text="Withdrawal Cancelled",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        await update.effective_message.edit_reply_markup()
 
     return ConversationHandler.END
 
@@ -261,11 +291,9 @@ def main() -> None:
                     withdraw_input_withdraw_address,
                 ),
             ],
-            WITHDRAW__CONFIRMATION: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, withdraw_confirmation)
-            ],
+            WITHDRAW__CONFIRMATION: [CallbackQueryHandler(withdraw_confirmation)],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[CommandHandler("cancel", cancel), CommandHandler("start", start)],
     )
     deposit_handler = MessageHandler(filters.Regex("^💰 Deposit$"), deposit)
     # create the InlineQueryHandler
