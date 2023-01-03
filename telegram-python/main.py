@@ -27,7 +27,7 @@ def generate_qr_code(address):
     return qr_code_data
 
 
-from telegram import __version__ as TG_VER
+from telegram import CallbackGame, KeyboardButton, WebAppInfo, __version__ as TG_VER
 
 try:
     from telegram import __version_info__
@@ -76,11 +76,12 @@ logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 
-from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK, WITHDRAW_RK
+from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK, WITHDRAW_RK, GAMES_RK
 
 load_dotenv()  # take environment variables from .env.
 
 TOKEN = os.getenv("TELEGRAM_API_KEY")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -89,6 +90,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Welcome Back to Lunaroll! 🎲",
         reply_markup=ReplyKeyboardMarkup(
+            # [
+            #     [
+            #         KeyboardButton(
+            #             "test",
+            #             web_app=WebAppInfo(
+            #                 url="https://python-telegram-bot.org/static/webappbot"
+            #             ),
+            #         )
+            #     ]
+            # ],
             MAIN_MENU_RK(),
             resize_keyboard=True,
             input_field_placeholder="Main Menu",
@@ -242,15 +253,57 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        f"Registered!",
+    )
+
+
+async def games(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        f"Choose your game 👇!",
+        reply_markup=ReplyKeyboardMarkup(
+            GAMES_RK(),
+            resize_keyboard=True,
+            one_time_keyboard=True,
+            input_field_placeholder="Select Game...",
+        ),
+    )
+
+
+async def game_dice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Game Dice")
+    await update.message.reply_game(
+        game_short_name="dice",
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "Play DICEEEEE",
+                        callback_game=CallbackGame(),
+                        web_app=WebAppInfo(
+                            url="https://python-telegram-bot.org/static/webappbot"
+                        ),
+                    )
+                ]
+            ]
+        ),
+    )
+
+
+async def handle_game_callbacks(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    query = update.callback_query
+
+    if query.game_short_name == "dice":
+        await query.answer(url=FRONTEND_BASE_URL + "/dice")
+
+
 async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.inline_query.query
+
     results = [InlineQueryResultGame(id="dice", game_short_name="dice")]
-
-    # create the inline game
-
-    # create the InputGameMessageContent
-
-    # create the inline query response
     await update.inline_query.answer(results)
 
 
@@ -272,10 +325,10 @@ def main() -> None:
 
     # Handle start
 
-    # return [["📝 Register", "💰 Deposit", "💸 Withdraw"]]
-
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     start_handler = CommandHandler("start", start)
+    register_handler = MessageHandler(filters.Regex("^📝 Register$"), register)
+    games_handler = MessageHandler(filters.Regex("^🎲 Games$"), games)
     withdraw_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex("^💸 Withdraw$"), withdraw)],
         states={
@@ -296,14 +349,30 @@ def main() -> None:
         fallbacks=[CommandHandler("cancel", cancel), CommandHandler("start", start)],
     )
     deposit_handler = MessageHandler(filters.Regex("^💰 Deposit$"), deposit)
-    # create the InlineQueryHandler
+    game_dice_handler = MessageHandler(filters.Regex("^▶️ Dice$"), game_dice)
+
+    # Handle Launching URL
+    games_callback_handler = CallbackQueryHandler(handle_game_callbacks)
+
+    # Inline Query Handler (Games Search Inline)
     inline_query_handler = InlineQueryHandler(inline_query)
 
-    # add the handler to the Dispatcher
+    # ADDING HANDLERS TO BOT
 
+    # Basic Command Handlers
     application.add_handler(start_handler)
+    application.add_handler(games_handler)
+    application.add_handler(register_handler)
     application.add_handler(withdraw_handler)
     application.add_handler(deposit_handler)
+
+    # Individual Games Handlers
+    application.add_handler(game_dice_handler)
+
+    # Games Callback Handler
+    application.add_handler(games_callback_handler)
+
+    # Inline Query Handler
     application.add_handler(inline_query_handler)
 
     # Run the bot until the user presses Ctrl-C

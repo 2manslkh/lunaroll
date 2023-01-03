@@ -1,4 +1,4 @@
 python-dotenv==0.21.0
-python-telegram-bot==20.0b0
+python-telegram-bot==20.0
 PyQRCode==1.2.1
 pypng==0.20220715.0
