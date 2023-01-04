@@ -1,9 +1,6 @@
 <script>
 	import { ethers } from 'ethers';
 	import abi from '../../lib/contracts/WETH.json';
-	console.log('🚀 | abi', abi);
-
-	import { web3Modal, ethereumClient, client } from '../web3';
 
 	import { prepareWriteContract, writeContract } from '@wagmi/core';
 
