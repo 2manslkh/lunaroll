@@ -30,13 +30,4 @@
 		line-height: 16px;
 	}
 
-	p {
-		font-size: 24px;
-		font-weight: bold;
-		font-family: Raleway;
-		font-style: normal;
-		font-weight: 700;
-		font-size: 14px;
-		line-height: 16px;
-	}
 </style>
