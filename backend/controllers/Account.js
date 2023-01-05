@@ -4,12 +4,6 @@ const { verifyTypedSignature } = require("../authentication/userSign");
 require("dotenv").config();
 
 const MNEMONIC = process.env.MNEMONIC;
-// generate random  mnemonic from ethers
-// const mnemonic = ethers.Wallet.createRandom().mnemonic;
-// console.log("🚀 | mnemonic", mnemonic);
-// const wallet = ethers.Wallet.fromMnemonic(MNEMONIC);
-
-// get wallet from mnemonic
 
 /**
  * Withdraw Request Payload
