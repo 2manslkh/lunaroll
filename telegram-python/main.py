@@ -75,6 +75,7 @@ logger = logging.getLogger(__name__)
 ) = range(4)
 
 from Keyboards import MAIN_MENU_RK, CONFIRMATION_IK, WITHDRAW_RK, GAMES_RK
+import API
 
 from dotenv import load_dotenv
 
@@ -222,6 +223,10 @@ async def withdraw_confirmation(
 
 
 async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+    print("DEPOSIT")
+    result = API.get_deposit_address(telegramId=update.message.from_user.id)
+    logger.info(result)
 
     address = "0xCa5cF03D081197BE24eF707081FbD7F3F11EB02D"
     await update.message.reply_markdown_v2(
